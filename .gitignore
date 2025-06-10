@@ -1,0 +1,8 @@
+## Self Defined
+.venv
+.env
+data/
+.ipynb_checkpoints
+db/
+logs/
+__pycache__
