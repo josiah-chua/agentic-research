@@ -1,15 +1,32 @@
 import datetime
 
 CURRENT_DATE = datetime.date.today()
-BACKGROUND_KNOWLEGDE = f"""The current date is {CURRENT_DATE}
+BACKGROUND_KNOWLEDGE = f"""The current date is {CURRENT_DATE}
 Take this into account when assessing the query if relevant"""
 
-class PlannerPrompts:
+CITATION_RULES = """<Citation Rules>
+- Assign each unique URL a single citation number in your text
+- End with ### Sources that lists each source with corresponding numbers
+- IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose
+- Example format:
+  [1] Source Title: URL
+  [2] Source Title: URL
+</Citation Rules>"""
 
-    system_prompt_format = f"""You are an extremely experience web researcher.
+def fill_prompt(template: str, **kwargs) -> str:
+    """
+    Fill a prompt template using keyword arguments.
+
+    Example:
+        fill_prompt(PlannerPrompts.user_prompt_format, query="What is AI?")
+    """
+    return template.format(**kwargs)
+
+class PlannerPrompts:
+    system_prompt_format = """You are an extremely experience web researcher.
 
 <Background Knowledge>
-{BACKGROUND_KNOWLEGDE}
+{background_knowledge}
 </Background Knowledge>
 
 <To Accomplish>
@@ -23,28 +40,29 @@ Then generate a list of information gathering tasks that meet the requirements b
 The information gathering tasks:
     - Should be explicit, give details instead of vague references.
     - Should NOT specify websites or sources.
-    - Should NOT exceed <<max_tasks>> number of tasks
+    - Should NOT exceed {max_tasks} number of tasks.
+    - The first tasks should be clarifying the key topics/items/ideas in the query.
 </Requirements>
-"""
+""".format(background_knowledge=BACKGROUND_KNOWLEDGE, max_tasks="{max_tasks}")
 
     user_prompt_format = """<Question>
-<<query>>
+{query}
 </Question>"""
 
     next_tasks_format = """<Next Information Gathering Tasks>
-<<next_tasks>>
+{next_tasks}
 </Next Information Gathering Tasks>"""
 
     current_task_format = """<Current Information Gathering Tasks>
-<<task>>
+{task}
 </Current Information Gathering Tasks>"""
 
 
 class SubQueriesPrompts:
-    system_prompt_format = f"""You are an extremely experience web researcher.
+    system_prompt_format = """You are an extremely experience web researcher.
 
 <Background Knowledge>
-{BACKGROUND_KNOWLEGDE}
+{background_knowledge}
 <Background Knowledge>
 
 <To Accomplish>
@@ -59,29 +77,28 @@ The web search queries should:
     - Each query should be focused only looking for a specific idea/fact/information
     - Each query should not be too long, a maximum of 30 words
     - Be specific in your query do not give vague references/terms
-    - DO NOT exceed <<max_subqueries>> per information gathering task
+    - DO NOT exceed {max_subqueries} per information gathering task
     - DO NOT specify websites in your query
-    - DO NOT use these special characters in the query (", ', < , >, /, \) etc
+    - DO NOT use these special characters in the query (", ', < , >, /, \") etc
 </requirements>
-"""
+""".format(background_knowledge=BACKGROUND_KNOWLEDGE, max_subqueries="{max_subqueries}")
 
     user_prompt_format = """
 <Current Information Gathering Task>
-<<task>>
+{task}
 </Current Information Gathering Task>
 """
 
     subqueries_format = """<Current Web Subqueries>
-<<subqueries>>
-</Current Web Subqueries>
-"""
+{subqueries}
+</Current Web Subqueries>"""
+
 
 class WebSearchPrompts:
-
-    consolidation_system_prompt = f"""You are an extremely experience analyst.
+    consolidation_system_prompt = """You are an extremely experience analyst.
 
 <Background Knowledge>
-{BACKGROUND_KNOWLEGDE}
+{background_knowledge}
 <Background Knowledge>
 
 <To Accomplish>
@@ -92,41 +109,33 @@ Try to retain the same sentence structure as the retrieved content.
 For each point remember to list your sources in your paragraph.
 </To Accomplish>
 
-<Citation Rules>
-- Assign each unique URL a single citation number in your text
-- End with ### Sources that lists each source with corresponding numbers
-- IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose
-- Example format:
-  [1] Source Title: URL
-  [2] Source Title: URL
-</Citation Rules>
+{citation_rules}
 
 <Final Check>
 1. Verify that EVERY claim is grounded in the provided Source material
 2. Confirm each URL appears ONLY ONCE in the Source list
 3. Verify that sources are numbered sequentially (1,2,3...) without any gaps
 </Final Check>
-"""
+""".format(background_knowledge=BACKGROUND_KNOWLEDGE, citation_rules = CITATION_RULES)
 
     consolidation_user_prompt_format = """<Current Information Gathering Tasks>
-<<task>>
+{task}
 </Current Information Gathering Tasks>
 
 <Current Web Subqueries>
-<<subquery>>
+{subquery}
 </Current Web Subqueries>
 
 <Web Sources Content>
-<<content>>
+{content}
 </Web Sources Content>
 """
 
-    task_answer_system_prompt = f"""You are an extremely experience technical writer.
+    task_answer_system_prompt = """You are an extremely experience technical writer.
 
 <Background Knowledge>
-{BACKGROUND_KNOWLEGDE}
+{background_knowledge}
 <Background Knowledge>
-
 
 <Task>
 You are to consolidate the useful infomation from the for the various subquestions and information gathered to address the current information gathering task.
@@ -135,39 +144,33 @@ Be very lenient on what you deem as useful.
 For each point remember to list your sources in your paragraph.
 <Task>
 
-<Citation Rules>
-- Assign each unique URL a single citation number in your text
-- End with ### Sources that lists each source with corresponding numbers
-- IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose
-- Example format:
-  [1] Source Title: URL
-  [2] Source Title: URL
-</Citation Rules>
+{citation_rules}
 
 <Final Check>
 1. Verify that EVERY claim is grounded in the provided Source material
 2. Confirm each URL appears ONLY ONCE in the Source list
 3. Verify that sources are numbered sequentially (1,2,3...) without any gaps
-</Final Check>"""
+</Final Check>""".format(background_knowledge=BACKGROUND_KNOWLEDGE, citation_rules=CITATION_RULES)
 
     task_answer_user_prompt_format = """<Current Information Gathering Tasks>
-<<task>>
+{task}
 </Current Information Gathering Tasks>
 
 <Various Subquestions and Information Gathered>
-<<content>>
+{content}
 </Various Subquestions and Information Gathered>
 """
-    findings_format = """<Findings from task: <<task>>>
-<<content>>
-</Findings from task: <<task>>>"""
+
+    findings_format = """<Findings from task: {task}>
+{content}
+</Findings from task: {task}>"""
 
 
 class ReplannerPrompts:
-    system_prompt_format = f"""You are an extremely experience web researcher.
+    system_prompt_format = """You are an extremely experience web researcher.
 
 <Background Knowledge>
-{BACKGROUND_KNOWLEGDE}
+{background_knowledge}
 </Background Knowledge>
 
 <To Accomplish>
@@ -183,30 +186,31 @@ The information gathering tasks:
     - Should be explicit, give details instead of vague references.
     - Should NOT overlap one another
     - Should NOT specify websites or sources.
-    - Should NOT exceed <<max_tasks>> number of tasks
+    - Should NOT exceed {max_tasks} number of tasks
     - Should NOT repeat previous tasks
     - If no next task is needed return an empty list
 </Requirements>
-"""
+""".format(background_knowledge=BACKGROUND_KNOWLEDGE, max_tasks="{max_tasks}")
 
     user_prompt_format = """<Question>
-<<query>>
+{query}
 </Question>
 
 <Next Information Gathering Tasks>
-<<next_tasks>>
+{next_tasks}
 </Next Information Gathering Tasks>
 
 <Previous Infomation Gathering Tasks and Findings>
-<<findings>>
+{findings}
 </Previous Infomation Gathering Tasks and Findings>
 """
 
+
 class ReportWriterPrompts:
-    system_prompt =f"""You are an extremely experience technical writer create detailed, balanced and factual research reports.
+    system_prompt = """You are an extremely experience technical writer create detailed, balanced and factual research reports.
 
 <Background Knowledge>
-{BACKGROUND_KNOWLEGDE}
+{background_knowledge}
 </Background Knowledge>
 
 <To Accomplish>
@@ -216,26 +220,20 @@ Be detailed in your explanations.
 Remember to list your sources in your paragraph
 <To Accomplish>
 
-<Citation Rules>
-- Assign each unique URL a single citation number in your text
-- End with ### Sources that lists each source with corresponding numbers
-- IMPORTANT: Number sources sequentially without gaps (1,2,3,4...) in the final list regardless of which sources you choose
-- Example format:
-  [1] Source Title: URL
-  [2] Source Title: URL
-</Citation Rules>
+{citation_rules}
 
 <Final Check>
 1. Verify that EVERY claim is grounded in the provided Source material
 2. Confirm each URL appears ONLY ONCE in the Source list
 3. Verify that sources are numbered sequentially (1,2,3...) without any gaps
 4. Verify that the research paper throughly answers the research topic
-</Final Check>"""
+</Final Check>
+""".format(background_knowledge=BACKGROUND_KNOWLEDGE, citation_rules=CITATION_RULES)
 
     user_prompt_format = """<Question>
-<<query>>
+{query}
 </Question>
 
 <Info Gathering Tasks and Findings>
-<<findings>>
+{findings}
 </Info Gathering Tasks and Findings>"""

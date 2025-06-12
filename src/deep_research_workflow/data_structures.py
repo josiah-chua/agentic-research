@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel, Field
-from typing import Optional, List, Dict, Literal, TypedDict
+from typing import Optional, List, Dict, Literal, TypedDict, Tuple
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 
 class Tasks(BaseModel):
@@ -9,10 +9,9 @@ class Tasks(BaseModel):
 class SubQueries(BaseModel):
     questions: List[str] = Field(..., description='Queries to search using the web search tool')
 
-class WebLinkRelevancyVerdict(BaseModel):
-    relevant: bool= Field(
-        ..., 
-        description='Whether the weblink is might possibly have relevant information to help answer the Sub Query')
+class ReportFormat(BaseModel):
+    content: List[str] = Field(..., description='Content written with propr citation fomatting ')
+    citations: List[Tuple[int, str]] = Field(..., description='List of citations where each citation is a list containing the citation number and the weblink')
 
 class SearchState(BaseModel):
     max_tasks: int = Field(default=5)
